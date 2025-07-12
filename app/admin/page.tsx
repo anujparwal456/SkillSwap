@@ -19,78 +19,86 @@ import {
   TrendingUp,
   Activity,
   Send,
+  Loader2,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+import { adminAPI } from "@/lib/api"
 
-const mockReports = [
-  {
-    id: 1,
-    type: "inappropriate_skill",
-    reportedBy: "Sarah Wilson",
-    targetUser: "John Spam",
-    description: "User listed inappropriate skill descriptions",
-    status: "pending",
-    date: "2024-01-15",
-  },
-  {
-    id: 2,
-    type: "spam",
-    reportedBy: "Mike Chen",
-    targetUser: "Fake User",
-    description: "Sending spam messages to multiple users",
-    status: "pending",
-    date: "2024-01-14",
-  },
-]
+interface Report {
+  _id: string
+  type: string
+  reportedBy: {
+    _id: string
+    firstName: string
+    lastName: string
+  }
+  targetUser: {
+    _id: string
+    firstName: string
+    lastName: string
+  }
+  description: string
+  status: string
+  createdAt: string
+}
 
-const mockUsers = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john@example.com",
-    status: "active",
-    joinDate: "2024-01-01",
-    swapsCompleted: 12,
-    rating: 4.8,
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane@example.com",
-    status: "banned",
-    joinDate: "2023-12-15",
-    swapsCompleted: 3,
-    rating: 2.1,
-  },
-]
+interface User {
+  _id: string
+  firstName: string
+  lastName: string
+  email: string
+  status: string
+  createdAt: string
+  completedSwaps: number
+  rating: number
+}
 
-const mockSwaps = [
-  {
-    id: 1,
-    user1: "John Doe",
-    user2: "Sarah Wilson",
-    skill1: "Web Development",
-    skill2: "Graphic Design",
-    status: "completed",
-    date: "2024-01-10",
-  },
-  {
-    id: 2,
-    user1: "Mike Chen",
-    user2: "Emma Davis",
-    skill1: "Photography",
-    skill2: "UI/UX Design",
-    status: "pending",
-    date: "2024-01-12",
-  },
-]
+interface Swap {
+  _id: string
+  user1: {
+    _id: string
+    firstName: string
+    lastName: string
+  }
+  user2: {
+    _id: string
+    firstName: string
+    lastName: string
+  }
+  skill1: string
+  skill2: string
+  status: string
+  createdAt: string
+}
+
+interface Stats {
+  totalUsers: number
+  activeSwaps: number
+  pendingReports: number
+  successRate: number
+  activeUsers24h: number
+  newRegistrations: number
+  completedSwaps: number
+}
+
+
+
 
 export default function AdminPage() {
-  const [reports, setReports] = useState(mockReports)
-  const [users, setUsers] = useState(mockUsers)
-  const [swaps, setSwaps] = useState(mockSwaps)
+  const [reports, setReports] = useState<Report[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [swaps, setSwaps] = useState<Swap[]>([])
+  const [stats, setStats] = useState<Stats>({
+    totalUsers: 0,
+    activeSwaps: 0,
+    pendingReports: 0,
+    successRate: 0,
+    activeUsers24h: 0,
+    newRegistrations: 0,
+    completedSwaps: 0,
+  })
   const [message, setMessage] = useState("")
   const [messageType, setMessageType] = useState("info")
 
@@ -103,31 +111,65 @@ export default function AdminPage() {
 
     if (!isLoggedIn || userRole !== "admin") {
       router.push("/auth/login")
+    } else {
+      async function fetchData() {
+        try {
+          const [users, reports, swaps, stats] = await Promise.all([
+            adminAPI.getUsers(),
+            adminAPI.getReports(),
+            adminAPI.getSwaps(),
+            adminAPI.getStats(),
+          ])
+          setUsers(users)
+          setReports(reports)
+          setSwaps(swaps)
+          setStats(stats)
+        } catch (error) {
+          toast({ title: "Error", description: "Failed to fetch data from the server." })
+        }
+      }
+      fetchData()
     }
-  }, [router])
+  }, [router, toast])
 
-  const handleReportAction = (reportId: number, action: "approve" | "reject") => {
-    setReports((prev) =>
-      prev.map((report) =>
-        report.id === reportId ? { ...report, status: action === "approve" ? "approved" : "rejected" } : report,
-      ),
-    )
-
-    toast({
-      title: `Report ${action}d`,
-      description: `The report has been ${action}d successfully.`,
-    })
+  const handleReportAction = async (reportId: string, action: "approve" | "reject") => {
+    try {
+      await adminAPI.handleReport(reportId, action)
+      setReports((prev) =>
+        prev.map((report) =>
+          report._id === reportId ? { ...report, status: action === "approve" ? "approved" : "rejected" } : report,
+        ),
+      )
+      toast({
+        title: `Report ${action}d`,
+        description: `The report has been ${action}d successfully.`,
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to ${action} report.`,
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleUserAction = (userId: number, action: "ban" | "unban") => {
-    setUsers((prev) =>
-      prev.map((user) => (user.id === userId ? { ...user, status: action === "ban" ? "banned" : "active" } : user)),
-    )
-
-    toast({
-      title: `User ${action}ned`,
-      description: `The user has been ${action}ned successfully.`,
-    })
+  const handleUserAction = async (userId: string, action: "ban" | "unban") => {
+    try {
+      await adminAPI.banUser(userId, action === "ban")
+      setUsers((prev) =>
+        prev.map((user) => (user._id === userId ? { ...user, status: action === "ban" ? "banned" : "active" } : user)),
+      )
+      toast({
+        title: `User ${action}ned`,
+        description: `The user has been ${action}ned successfully.`,
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to ${action} user.`,
+        variant: "destructive",
+      })
+    }
   }
 
   const sendPlatformMessage = () => {
@@ -194,7 +236,7 @@ export default function AdminPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">1,234</div>
+              <div className="text-2xl font-bold">{stats.totalUsers}</div>
               <p className="text-xs text-muted-foreground">+12% from last month</p>
             </CardContent>
           </Card>
@@ -205,7 +247,7 @@ export default function AdminPage() {
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">89</div>
+              <div className="text-2xl font-bold">{stats.activeSwaps}</div>
               <p className="text-xs text-muted-foreground">+5% from last week</p>
             </CardContent>
           </Card>
@@ -217,7 +259,7 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                {reports.filter((r) => r.status === "pending").length}
+                {stats.pendingReports}
               </div>
               <p className="text-xs text-muted-foreground">Requires attention</p>
             </CardContent>
@@ -229,7 +271,7 @@ export default function AdminPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">94.2%</div>
+              <div className="text-2xl font-bold text-green-600">{stats.successRate}%</div>
               <p className="text-xs text-muted-foreground">Successful swaps</p>
             </CardContent>
           </Card>
@@ -253,30 +295,30 @@ export default function AdminPage() {
               <CardContent>
                 <div className="space-y-4">
                   {reports.map((report) => (
-                    <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={report._id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2">
                           <Badge variant={report.type === "spam" ? "destructive" : "secondary"}>
                             {report.type.replace("_", " ")}
                           </Badge>
-                          <span className="font-medium">{report.targetUser}</span>
-                          <span className="text-sm text-gray-500">reported by {report.reportedBy}</span>
+                          <span className="font-medium">{report.targetUser.firstName} {report.targetUser.lastName}</span>
+                          <span className="text-sm text-gray-500">reported by {report.reportedBy.firstName} {report.reportedBy.lastName}</span>
                         </div>
                         <p className="text-sm text-gray-600">{report.description}</p>
-                        <p className="text-xs text-gray-400">{report.date}</p>
+                        <p className="text-xs text-gray-400">{new Date(report.createdAt).toLocaleDateString()}</p>
                       </div>
 
                       {report.status === "pending" ? (
                         <div className="flex space-x-2">
                           <Button
                             size="sm"
-                            onClick={() => handleReportAction(report.id, "approve")}
+                            onClick={() => handleReportAction(report._id, "approve")}
                             className="bg-green-600 hover:bg-green-700"
                           >
                             <CheckCircle className="w-4 h-4 mr-1" />
                             Approve
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => handleReportAction(report.id, "reject")}>
+                          <Button size="sm" variant="outline" onClick={() => handleReportAction(report._id, "reject")}>
                             <XCircle className="w-4 h-4 mr-1" />
                             Reject
                           </Button>
@@ -302,17 +344,17 @@ export default function AdminPage() {
               <CardContent>
                 <div className="space-y-4">
                   {users.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={user._id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center space-x-4">
                         <Avatar>
-                          <AvatarFallback>{user.name[0]}</AvatarFallback>
+                          <AvatarFallback>{user.firstName[0]}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{user.name}</p>
+                          <p className="font-medium">{user.firstName} {user.lastName}</p>
                           <p className="text-sm text-gray-600">{user.email}</p>
                           <div className="flex items-center space-x-4 text-xs text-gray-500">
-                            <span>Joined: {user.joinDate}</span>
-                            <span>Swaps: {user.swapsCompleted}</span>
+                            <span>Joined: {new Date(user.createdAt).toLocaleDateString()}</span>
+                            <span>Swaps: {user.completedSwaps}</span>
                             <span>Rating: {user.rating}</span>
                           </div>
                         </div>
@@ -321,12 +363,12 @@ export default function AdminPage() {
                       <div className="flex items-center space-x-2">
                         <Badge variant={user.status === "active" ? "default" : "destructive"}>{user.status}</Badge>
                         {user.status === "active" ? (
-                          <Button size="sm" variant="destructive" onClick={() => handleUserAction(user.id, "ban")}>
+                          <Button size="sm" variant="destructive" onClick={() => handleUserAction(user._id, "ban")}>
                             <Ban className="w-4 h-4 mr-1" />
                             Ban
                           </Button>
                         ) : (
-                          <Button size="sm" onClick={() => handleUserAction(user.id, "unban")}>
+                          <Button size="sm" onClick={() => handleUserAction(user._id, "unban")}>
                             <CheckCircle className="w-4 h-4 mr-1" />
                             Unban
                           </Button>
@@ -348,19 +390,19 @@ export default function AdminPage() {
               <CardContent>
                 <div className="space-y-4">
                   {swaps.map((swap) => (
-                    <div key={swap.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={swap._id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2">
-                          <span className="font-medium">{swap.user1}</span>
+                          <span className="font-medium">{swap.user1.firstName} {swap.user1.lastName}</span>
                           <span className="text-gray-500">↔</span>
-                          <span className="font-medium">{swap.user2}</span>
+                          <span className="font-medium">{swap.user2.firstName} {swap.user2.lastName}</span>
                         </div>
                         <div className="flex items-center space-x-2 text-sm text-gray-600">
                           <Badge variant="secondary">{swap.skill1}</Badge>
                           <span>for</span>
                           <Badge variant="outline">{swap.skill2}</Badge>
                         </div>
-                        <p className="text-xs text-gray-400">{swap.date}</p>
+                        <p className="text-xs text-gray-400">{new Date(swap.createdAt).toLocaleDateString()}</p>
                       </div>
 
                       <Badge variant={swap.status === "completed" ? "default" : "secondary"}>{swap.status}</Badge>
@@ -458,15 +500,15 @@ export default function AdminPage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Active Users (24h)</span>
-                    <span className="font-medium">342</span>
+                    <span className="font-medium">{stats.activeUsers24h}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">New Registrations</span>
-                    <span className="font-medium">23</span>
+                    <span className="font-medium">{stats.newRegistrations}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Completed Swaps</span>
-                    <span className="font-medium">15</span>
+                    <span className="font-medium">{stats.completedSwaps}</span>
                   </div>
                 </CardContent>
               </Card>
