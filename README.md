@@ -29,25 +29,28 @@ Users can:
 ## Screenshots
 
 ### Landing Page
-![Landing Page](/mnt/data/WhatsApp Image 2025-07-12 at 17.40.28_e2310afb.jpg)
+![Landing Page](![WhatsApp Image 2025-07-12 at 17 40 28_85674ebb](https://github.com/user-attachments/assets/82542f16-fc9d-414f-a8dd-6c4d007518b0)
+)
 
 ### Sign In Page
-![Sign In Page](/mnt/data/WhatsApp Image 2025-07-12 at 17.40.51_185611d5.jpg)
+![Sign In Page](![WhatsApp Image 2025-07-12 at 17 40 51_761d43eb](https://github.com/user-attachments/assets/57c191fc-c90e-4bd6-a29a-0fff1f9181c9)
+)
 
 ### Browse Skills
-![Browse Skills](/mnt/data/WhatsApp Image 2025-07-12 at 17.42.14_2b357db6.jpg)
+![Browse Skills](![WhatsApp Image 2025-07-12 at 17 42 14_50ef427b](https://github.com/user-attachments/assets/1061351d-e0be-42b7-9454-1b7f77fd8b6f)
+)
 
 ### User Dashboard
-![User Dashboard](/mnt/data/WhatsApp Image 2025-07-12 at 17.42.34_68bef2c9.jpg)
+![User Dashboard](![WhatsApp Image 2025-07-12 at 17 42 34_3d907039](https://github.com/user-attachments/assets/1a1965d6-b4e5-42be-8163-43b39e597e8d)
+)
 
 ### Profile Settings - Basic Info
-![Profile Settings - Basic Info](/mnt/data/WhatsApp Image 2025-07-12 at 17.42.57_b4a388ad.jpg)
-
-### Profile Settings - Privacy
-![Profile Settings - Privacy](/mnt/data/WhatsApp Image 2025-07-12 at 17.43.14_0ef28adc.jpg)
+![Profile Settings - Basic Info](![WhatsApp Image 2025-07-12 at 17 42 57_9bdee6e0](https://github.com/user-attachments/assets/77fcb170-4ddd-4cbe-866f-3daaed997e69)
+)
 
 ### Admin Dashboard
-![Admin Dashboard](/mnt/data/WhatsApp Image 2025-07-12 at 17.44.32_d1c859b0.jpg)
+![Admin Dashboard](![WhatsApp Image 2025-07-12 at 17 44 32_0654bcdc](https://github.com/user-attachments/assets/1bd4512e-2718-4845-9b1a-21488356f5f2)
+)
 
 ---
 
