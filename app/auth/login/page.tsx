@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Users, Eye, EyeOff } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { authAPI, authUtils } from "@/lib/api"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -28,23 +29,49 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate login
-    setTimeout(() => {
-      if (formData.email === "admin@skillswap.com") {
-        localStorage.setItem("userRole", "admin")
-        localStorage.setItem("isLoggedIn", "true")
-        router.push("/admin")
-      } else {
-        localStorage.setItem("userRole", "user")
-        localStorage.setItem("isLoggedIn", "true")
-        router.push("/dashboard")
-      }
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully signed in.",
+    try {
+      const response = await authAPI.login({
+        email: formData.email,
+        password: formData.password
       })
+
+      if (response.success && response.data) {
+        // Store auth token
+        authUtils.setToken(response.data.token)
+        
+        // Store user info
+        localStorage.setItem("userRole", response.data.user.role)
+        localStorage.setItem("isLoggedIn", "true")
+        localStorage.setItem("userInfo", JSON.stringify(response.data.user))
+        
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully signed in.",
+        })
+        
+        // Redirect based on user role
+        if (response.data.user.role === 'admin') {
+          router.push("/admin")
+        } else {
+          router.push("/dashboard")
+        }
+      } else {
+        toast({
+          title: "Login failed",
+          description: response.message || "Invalid credentials",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      toast({
+        title: "Error",
+        description: "An error occurred during login. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   return (

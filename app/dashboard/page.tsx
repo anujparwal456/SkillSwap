@@ -21,18 +21,10 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useUser } from "@/contexts/UserContext"
 
 export default function DashboardPage() {
-  const [user, setUser] = useState({
-    name: "John Doe",
-    email: "john@example.com",
-    avatar: "/placeholder.svg?height=40&width=40",
-    skillsOffered: ["Web Development", "React", "Node.js"],
-    skillsWanted: ["UI/UX Design", "Photography"],
-    rating: 4.8,
-    completedSwaps: 12,
-    isPublic: true,
-  })
+const { user } = useUser()
 
   const [swapRequests, setSwapRequests] = useState([
     {
@@ -125,7 +117,7 @@ export default function DashboardPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user.name}!</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user.firstName} {user.lastName}!</h1>
           <p className="text-gray-600">Here's what's happening with your skill swaps today.</p>
         </div>
 

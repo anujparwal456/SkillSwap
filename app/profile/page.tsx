@@ -15,21 +15,24 @@ import { Users, Camera, Plus, X, MapPin, Star, ArrowLeft, Save } from "lucide-re
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+import { useUser } from "@/contexts/UserContext"
+import { updateProfile } from "@/lib/api"
 
 export default function ProfilePage() {
+  const { user, updateUser } = useUser()
   const [profile, setProfile] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john@example.com",
-    location: "San Francisco, CA",
-    bio: "Passionate web developer with 5+ years of experience. Love teaching and learning new technologies.",
+    firstName: "",
+    lastName: "",
+    email: "",
+    location: "",
+    bio: "",
     avatar: "/placeholder.svg?height=100&width=100",
-    skillsOffered: ["Web Development", "React", "Node.js", "JavaScript"],
-    skillsWanted: ["UI/UX Design", "Photography", "Digital Marketing"],
-    availability: ["Weekends", "Evenings"],
+    skillsOffered: [] as string[],
+    skillsWanted: [] as string[],
+    availability: [] as string[],
     isPublic: true,
-    rating: 4.8,
-    completedSwaps: 12,
+    rating: 0,
+    completedSwaps: 0,
   })
 
   const [newSkillOffered, setNewSkillOffered] = useState("")
@@ -40,23 +43,51 @@ export default function ProfilePage() {
   const { toast } = useToast()
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn")
-    if (!isLoggedIn) {
+    if (!user) {
       router.push("/auth/login")
+    } else {
+      // Initialize profile with user data
+      setProfile({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        location: user.location || "",
+        bio: user.bio || "",
+        avatar: user.avatar || "/placeholder.svg?height=100&width=100",
+        skillsOffered: user.skillsOffered || [],
+        skillsWanted: user.skillsWanted || [],
+        availability: user.availability || [],
+        isPublic: user.isPublic !== undefined ? user.isPublic : true,
+        rating: user.rating || 0,
+        completedSwaps: user.completedSwaps || 0,
+      })
     }
-  }, [router])
+  }, [user, router])
 
   const handleSave = async () => {
     setIsLoading(true)
 
-    // Simulate save
-    setTimeout(() => {
+    try {
+      // Update profile via API
+      const updatedUser = await updateProfile(profile)
+      
+      // Update user context
+      updateUser(updatedUser)
+      
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
       })
+    } catch (error) {
+      console.error('Profile update failed:', error)
+      toast({
+        title: "Update failed",
+        description: "There was an error updating your profile. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   const addSkillOffered = () => {

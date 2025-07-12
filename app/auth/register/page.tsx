@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Users, Eye, EyeOff } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { authAPI, authUtils } from "@/lib/api"
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -51,17 +52,46 @@ export default function RegisterPage() {
 
     setIsLoading(true)
 
-    // Simulate registration
-    setTimeout(() => {
-      localStorage.setItem("userRole", "user")
-      localStorage.setItem("isLoggedIn", "true")
-      router.push("/dashboard")
-      toast({
-        title: "Welcome to SkillSwap!",
-        description: "Your account has been created successfully.",
+    try {
+      const response = await authAPI.register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password
       })
+
+      if (response.success && response.data) {
+        // Store auth token
+        authUtils.setToken(response.data.token)
+        
+        // Store user info
+        localStorage.setItem("userRole", response.data.user.role)
+        localStorage.setItem("isLoggedIn", "true")
+        localStorage.setItem("userInfo", JSON.stringify(response.data.user))
+        
+        toast({
+          title: "Welcome to SkillSwap!",
+          description: "Your account has been created successfully.",
+        })
+        
+        router.push("/dashboard")
+      } else {
+        toast({
+          title: "Registration failed",
+          description: response.message || "An error occurred during registration",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Registration error:', error)
+      toast({
+        title: "Error",
+        description: "An error occurred during registration. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   return (
