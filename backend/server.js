@@ -52,13 +52,11 @@ const connectDB = async () => {
       maxPoolSize: 10,
       bufferCommands: false,
       retryWrites: true,
-      w: 'majority',
-      tlsInsecure: true,
-      tlsAllowInvalidCertificates: true
+      w: 'majority'
     };
     
     await mongoose.connect(process.env.MONGODB_URI, mongoOptions);
-    console.log('Connected to MongoDB');
+    console.log('✅ Connected to MongoDB');
     
     // Seed admin user with delay to ensure connection is stable
     setTimeout(() => {
@@ -67,8 +65,21 @@ const connectDB = async () => {
       });
     }, 2000);
   } catch (err) {
-    console.error('MongoDB connection error:', err.message);
-    console.log('Retrying connection in 5 seconds...');
+    console.error('❌ MongoDB connection error:', err.message);
+    
+    if (err.message.includes('authentication failed') || err.message.includes('bad auth')) {
+      console.error('🔐 Authentication Error: Invalid MongoDB credentials');
+      console.error('📋 To fix this:');
+      console.error('   1. Go to MongoDB Atlas Dashboard');
+      console.error('   2. Navigate to Database Access');
+      console.error('   3. Check if user exists or create new user');
+      console.error('   4. Reset password and update .env file');
+      console.error('   5. Ensure user has proper permissions');
+      console.error('🚫 Skipping database connection. Server will run without database.');
+      return; // Don't retry for auth errors
+    }
+    
+    console.log('🔄 Retrying connection in 5 seconds...');
     setTimeout(connectDB, 5000);
   }
 };
@@ -84,10 +95,23 @@ app.use('/api/upload', uploadRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+  const dbStatus = mongoose.connection.readyState;
+  const dbStatusMap = {
+    0: 'Disconnected',
+    1: 'Connected',
+    2: 'Connecting',
+    3: 'Disconnecting'
+  };
+  
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    database: {
+      status: dbStatusMap[dbStatus] || 'Unknown',
+      connected: dbStatus === 1
+    },
+    message: dbStatus === 1 ? 'All systems operational' : 'Server running, database connection needed'
   });
 });
 
