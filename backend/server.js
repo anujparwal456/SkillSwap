@@ -52,7 +52,9 @@ const connectDB = async () => {
       maxPoolSize: 10,
       bufferCommands: false,
       retryWrites: true,
-      w: 'majority'
+      w: 'majority',
+      tlsInsecure: true,
+      tlsAllowInvalidCertificates: true
     };
     
     await mongoose.connect(process.env.MONGODB_URI, mongoOptions);

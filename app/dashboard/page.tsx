@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation"
 import { useUser } from "@/contexts/UserContext"
 
 export default function DashboardPage() {
-const { user } = useUser()
+const { user, logout } = useUser()
 
   const [swapRequests, setSwapRequests] = useState([
     {
@@ -106,6 +106,9 @@ const { user } = useUser()
                 Profile
               </Button>
             </Link>
+            <Button variant="ghost" size="sm" onClick={logout}>
+              Logout
+            </Button>
             <Avatar className="w-8 h-8">
               <AvatarImage src={user.avatar || "/placeholder.svg"} />
               <AvatarFallback>JD</AvatarFallback>
@@ -338,7 +341,7 @@ const { user } = useUser()
                 </Link>
                 <Button className="w-full bg-transparent" variant="outline">
                   <MessageSquare className="w-4 h-4 mr-2" />
-                  Messages
+                  Feedback
                 </Button>
               </CardContent>
             </Card>

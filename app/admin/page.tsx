@@ -114,17 +114,20 @@ export default function AdminPage() {
     } else {
       async function fetchData() {
         try {
+          console.log('Fetching admin data...')
           const [users, reports, swaps, stats] = await Promise.all([
             adminAPI.getUsers(),
             adminAPI.getReports(),
             adminAPI.getSwaps(),
             adminAPI.getStats(),
           ])
+          console.log('Admin data fetched:', { users, reports, swaps, stats })
           setUsers(users)
           setReports(reports)
           setSwaps(swaps)
           setStats(stats)
         } catch (error) {
+          console.error('Error fetching admin data:', error)
           toast({ title: "Error", description: "Failed to fetch data from the server." })
         }
       }
